@@ -1,6 +1,4 @@
-# @AngularClass
 # http://editorconfig.org
-
 root = true
 
 [*]
@@ -11,6 +9,12 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+
 [*.md]
-insert_final_newline = false
+max_line_length = 0
 trim_trailing_whitespace = false
+
+# Indentation override
+#[lib/**.js]
+#[{package.json,.travis.yml}]
+#[**/**.js]
