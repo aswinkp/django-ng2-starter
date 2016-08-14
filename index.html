@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Django-ng2-starter by aswinkp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Django-ng2-starter</h1>
+      <h2 class="project-tagline">Starter kit featuring Django and Angular 2</h2>
+      <a href="https://github.com/aswinkp/django-ng2-starter" class="btn">View on GitHub</a>
+      <a href="https://github.com/aswinkp/django-ng2-starter/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/aswinkp/django-ng2-starter/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <p>Django is awesome. Angular2 is also awesome. But they both are awesome when there is abrupt seperation between them.</p>
+
+<p>However need may arise to combine both django and angular2 to make your project double awesome.</p>
+
+<p>I have come across a situation where I need to use both side-by-side utilizing the features of both.
+To make it more complicated, angular application should be in the root url. It would have been bit easier if angular app is served from sub folder like domain.com/app/. Anyways, I wanted to find the solution (again, under critical deadline). </p>
+
+<h1>
+<a id="project-setup" class="anchor" href="#project-setup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Project Setup</h1>
+
+<pre><code>virtualenv /path/to/env/
+
+cd /path/to/env/
+
+source bin/activate
+
+pip install django
+
+django-admin startproject project_name
+
+cd project_name/
+
+python manage.py startapp app_name
+
+python manage.py migrate
+
+mkdir ngApp
+
+cd ngApp
+
+git clone https://github.com/angular/quickstart .
+
+rm -rf .git/ .github/
+
+mv index.html /path/to/django/app/templates/index.html
+
+mv styles.css /path/to/django/app/static/css/styles.css
+
+npm install
+</code></pre>
+
+<p>Now that we have succesfully setup our project directory.</p>
+
+<p>In settings.py file</p>
+
+<pre><code>ANGULAR_URL = '/ng/'
+ANGULAR_ROOT = os.path.join(BASE_DIR, 'ngApp/')
+</code></pre>
+
+<p>The above lines do same as static url and static root. Render static files in the angular2.</p>
+
+<pre><code>var config = {
+map: map,
+baseURL: '/ng/',
+packages: packages
+};
+</code></pre>
+
+<p>Note that `baseURL: '/ng/' in the ANGULAR_URL</p>
+
+<pre><code>class AngularApp(TemplateView):
+  template_name = 'index.html'
+
+  def get_context_data(self, **kwargs):
+  context = super(AngularApp, self).get_context_data(**kwargs)
+  context['ANGULAR_URL'] = settings.ANGULAR_URL
+  return context
+
+class SampleView(View):
+    """View to render django template to angular"""
+    def get(self, request):
+    return render("OK!")
+</code></pre>
+
+<p>Note that we are passing ANGULAR_URL as the context. </p>
+
+<p>Add the below in urls.py</p>
+
+<pre><code>ngurls = [
+  url(r'^$', SampleView.as_view(), name='sample'),
+]
+
+urlpatterns = [
+  url(r'^admin/', admin.site.urls),
+  url(r'^(?!ng/).*$', AngularApp.as_view(), name="angular_app"),
+] + static(settings.ANGULAR_URL, document_root=settings.ANGULAR_ROOT)
+</code></pre>
+
+<p>Here <code>(?!ng/)</code> is the ANGULAR_URL</p>
+
+<p>Remember since you need the angular app in the root URL, you need to accept all the routing except static files in the ngApp. <code>url(r'^(?!ng/).*$'</code> does the same. It accepts all the paths except domain.com/ng/.
+This leaves you another challenge. If you route to domain.com/someurl/ , the above django route will show you to index.html, where you will have angular application. So, you have to handle 404 pages in angular application also. </p>
+
+<p>Here comes the important part. We are using the django template to call the angular application. This is the place where you can make double awesome. You can add django logics here.<br>
+Now create index.html in templates folder under django app.</p>
+
+<pre><code>{% load static %}
+
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Angular 2 QuickStart&lt;/title&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;link rel="stylesheet" href="{% static 'css/styles.css' %}"&gt;
+    &lt;base href="/"&gt;
+    &lt;!-- Polyfill(s) for older browsers --&gt;
+    &lt;script src="{{ ANGULAR_URL }}node_modules/core-js/client/shim.min.js"&gt;&lt;/script&gt;
+
+    &lt;script src="{{ ANGULAR_URL }}node_modules/zone.js/dist/zone.js"&gt;&lt;/script&gt;
+    &lt;script src="{{ ANGULAR_URL }}node_modules/reflect-metadata/Reflect.js"&gt;&lt;/script&gt;
+    &lt;script src="{{ ANGULAR_URL }}node_modules/systemjs/dist/system.src.js"&gt;&lt;/script&gt;
+
+    &lt;script src="{{ ANGULAR_URL }}systemjs.config.js"&gt;&lt;/script&gt;
+    {# -------------------------------------- #}
+    {# Write your django logics anywhere here #}
+    {# -------------------------------------- #}
+    &lt;script&gt;
+      window.STATIC_URL = "{{ ANGULAR_URL }}";
+      System.import('/ng/app/main').catch(function(err){
+          console.error(err);
+      });
+    &lt;/script&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+    &lt;my-app&gt;Loading...&lt;/my-app&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>In <code>System.import</code> you should specify <code>/ANGULAR_URL/angular_app_folder/name_of_main</code></p>
+
+<p>For example, if you have two angular applications based on user roles, you can set a condition here and route them accordingly by changing in <code>System.import</code>. Or you can display the name and profile picture current user in the template or something similar to stackoverfow reputation of current user but remember you  can handle it in angular also. One thing you should keep in mind is that if you are using the above model, keep login and registration as a pure django template.</p>
+
+<p>Now create the below files.</p>
+
+<p>main.ts</p>
+
+<pre><code>import { bootstrap }    from '@angular/platform-browser-dynamic';
+
+import { AppComponent } from './app.component';
+import {appRouterProviders} from "./app.route";
+import {HTTP_PROVIDERS} from "@angular/http";
+import {enableProdMode} from '@angular/core';
+
+enableProdMode();
+bootstrap(AppComponent, [
+  appRouterProviders,
+  HTTP_PROVIDERS
+])
+.catch(err =&gt; console.error(err));
+</code></pre>
+
+<p><code>mkdir app</code></p>
+
+<p><code>cd app</code></p>
+
+<p>Lets add two more components to implement routing.</p>
+
+<p>app.route.ts</p>
+
+<pre><code>import { provideRouter, RouterConfig } from '@angular/router';
+import {Component1Component} from "./component1.component";
+import {Component2Component} from "./component2.component";
+
+const routes: RouterConfig = [
+    { path: '',redirectTo: '/component1',pathMatch: 'full'},
+  { path: 'component1', component: Component1Component },
+  { path: 'component2', component: Component2Component },
+];
+
+export const appRouterProviders = [
+  provideRouter(routes)
+];
+</code></pre>
+
+<p>app.component.ts</p>
+
+<pre><code>import { Component } from '@angular/core';
+import { ROUTER_DIRECTIVES } from '@angular/router';
+
+@Component({
+    selector: 'my-app',
+    template: `
+        &lt;h1&gt;My First Angular 2 App&lt;/h1&gt;
+        &lt;nav&gt;
+          &lt;a routerLink="/component1" routerLinkActive="active"&gt;Component 1&lt;/a&gt;
+          &lt;a routerLink="/component2" routerLinkActive="active"&gt;Component 2&lt;/a&gt;
+        &lt;/nav&gt;
+        &lt;router-outlet&gt;&lt;/router-outlet&gt;
+    `,
+    directives: [ROUTER_DIRECTIVES]
+})
+export class AppComponent { }
+</code></pre>
+
+<p>component1.component.ts</p>
+
+<pre><code>import {Component} from "@angular/core";
+@Component({
+  template: '&lt;h1&gt;Component 1&lt;/h1&gt;'
+})
+export class Component1Component{
+
+}
+
+component2.component.ts
+
+import {Component} from "@angular/core";
+@Component({
+  template: '&lt;h1&gt;Component 2&lt;/h1&gt;'
+})
+export class Component2Component{
+
+}
+</code></pre>
+
+<p>Now your folder structure should look something like this. I have included all the files in the tree below.</p>
+
+<pre>
+.
+├── core
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── __init__.py
+│   ├── models.py
+│   ├── static
+│   │   └── css
+│   │       └── styles.css
+│   ├── templates
+│   │   └── index.html
+│   ├── tests.py
+│   ├── views.py
+├── project
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+├── db.sqlite3
+├── LICENSE
+├── manage.py
+├── ngApp
+│   ├── app
+│   │   ├── app.component.spec.ts
+│   │   ├── app.component.ts
+│   │   ├── app.route.ts
+│   │   ├── component1.component.ts
+│   │   ├── component2.component.ts
+│   │   └── main.ts
+│   ├── CHANGELOG.md
+│   ├── Dockerfile
+│   ├── e2e
+│   ├── node_modules
+│   │   ├
+│   ├── README.md
+│   ├── typings
+│   │   ├── 
+└── README.md</pre>
+
+<pre><code>cd /path/to/ngApp/
+
+npm start 
+</code></pre>
+
+<p>Open a new terminal,</p>
+
+<pre><code>cd path/to/django-ng2-starter/
+
+python manage.py runserver
+
+</code></pre>
+
+<h3>
+<a id="happy-coding-" class="anchor" href="#happy-coding-" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Happy Coding :)</h3>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/aswinkp/django-ng2-starter">Django-ng2-starter</a> is maintained by <a href="https://github.com/aswinkp">aswinkp</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
