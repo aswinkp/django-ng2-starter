@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import View, TemplateView
 
@@ -16,5 +17,5 @@ class AngularApp(TemplateView):
 class SampleView(View):
 	"""View to render django template to angular"""
 	def get(self, request):
-		return render("OK!")
+		return HttpResponse("OK!")
 		

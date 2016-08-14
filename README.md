@@ -1,5 +1,5 @@
 # django-ng2-starter
-Boilerplate featuring Angular2 and Django
+Boilerplate featuring Angular2 and Django.
 
 ## Project Setup
 ```python
@@ -16,6 +16,13 @@ cd django-ng2-starter/ngApp/
 
 #install NPM dependencies
 npm install
+#start npm
+npm start
+
+#Open a new terminal window
 cd ../
 #Run Django Development Server
-python manage.py runserver```
+python manage.py runserver
+```
+
+Though we use django server npm should be running behind to compile typescript to javascript instantly. 
