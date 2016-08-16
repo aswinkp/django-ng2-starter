@@ -1,6 +1,8 @@
 # django-ng2-starter
 Boilerplate featuring Angular2 and Django.
 
+This repository is based on this [blog post](https://4sw.in/blog/2016/django-angular2-tutorial/).
+
 ## Project Setup
 ```python
 #Create a new Virtual Environment.
