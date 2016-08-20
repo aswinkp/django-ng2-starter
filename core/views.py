@@ -18,4 +18,9 @@ class SampleView(View):
 	"""View to render django template to angular"""
 	def get(self, request):
 		return HttpResponse("OK!")
-		
+
+
+class NgTemplateView(View):
+	"""View to render django template to angular"""
+	def get(self, request):
+		return render(request, 'template.html', {"django_variable": "This is django context variable"})
