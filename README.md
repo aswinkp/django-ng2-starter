@@ -19,7 +19,7 @@ virtualenv ng2env
 cd ng2env
 
 #Install django
-pip install django
+pip install -r requirements.txt
 
 #Fork or clone this repo.
 git clone https://github.com/aswinkp/django-ng2-starter.git
